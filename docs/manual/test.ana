@@ -1,0 +1,13 @@
+ANALYZE SSS;
+     INFREQ 100.0 1.0E6 LOG 501;
+     SET V1 AC 1.0 0.0;
+     PRINT VDB(OUT) VP(OUT);
+     END;
+
+ANALYZE TRAN;
+     TIME 0+ 500 1
+     SET V1 PULSE 0 5 10e-6 5e-6 5e-6 100e-6 500e-6;
+     PRINT V(OUT);
+     END;
+
+

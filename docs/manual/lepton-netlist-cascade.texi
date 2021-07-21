@@ -1,0 +1,252 @@
+@node Cascade backend
+@section Lepton RF Cascade Symbols and Netlister
+
+by: Dan McMahill
+
+This document is released under
+@url{http://www.gnu.org/copyleft/fdl.html, GFDL}
+
+December 3rd, 2003
+
+
+@subsection Overview
+
+This document describes the symbol library and @netlist{} backend
+which support driving RF Cascade
+(@url{http://rfcascade.sourceforge.net}) simulations from the Lepton
+system.  Cascade is a noise figure and distortion analysis tool geared
+towards radio receiver design.
+
+The basic steps involved with using Lepton as the frontend for Cascade
+simulations are:
+@enumerate
+@item
+Create schematics of the circuit.
+
+@item
+Extract the netlist.
+
+@item
+Run Cascade.
+
+@end enumerate
+
+
+@subsection Requirements
+
+You will need the following programs to be installed:
+@itemize
+@item lepton-eda
+A version of Lepton package.
+
+@item RF Cascade
+The executable is usually called @command{cascade}.  If you do not
+have Cascade available on your system, you will need to get a copy
+from @url{http://rfcascade.sourceforge.net}.
+
+@end itemize
+
+
+@subsection Creating Schematics
+
+When creating a block diagram in the @schematic{} editor, use only the
+symbols from the cascade library.  Every block diagram must have a
+@samp{cascadesource} element.  In addition, the block diagram must be a
+simple cascade.  No parallel paths or branches are allowed.
+
+All instances must have a unique reference designator.  For a receiver
+block diagram, this is often times best achieved by manually entering
+them.  The only restriction on reference designator names is that they
+contain no spaces.  A descriptive name such as @samp{RF Filter} or
+@samp{First Mixer} is useful as it will show up in the cascade output
+report.
+
+
+@subsection Extracting the Cascade Input File
+
+To extract the Cascade input file, run:
+@example
+lepton-netlist -g cascade -o test.cas file1.sch [file2.sch ...]
+@end example
+
+For the example file contained in this archive, you can run:
+@example
+lepton-netlist -g cascade -o example.cas example.sch
+@end example
+
+The netlist will be left in @file{example.cas}.
+
+
+@subsection Running Cascade
+
+Cascade is exceptionally simple to run.  Just run:
+@example
+cascade example.cas > example.out
+@end example
+
+to run the analysis on the system contained in the file
+@file{example.cas} and write the results to the file
+@file{example.out}.  Refer to the Cascade documentation for complete
+details.
+
+
+@subsection Appendix A -- Symbols in the Library
+
+Please note that all instances must have the @samp{refdes=} attribute
+set.
+
+
+@subsubsection Sources (cascade-source)
+
+Source.
+
+Attributes:
+@itemize
+@item
+C=Carrier level in dBm.  Optional.
+
+@item
+CN0=Carrier to Noise Spectral Density Ratio in dBm/Hz.  Optional.
+
+@item
+CN=Carrier to Noise Ratio in dB.  Optional.
+
+@item
+BW=Signal Bandwidth in Hz.  Optional, but requred if CN= is used.
+
+@end itemize
+
+
+@subsubsection Defaults (cascade-default)
+
+This symbol sets the default impedance levels as well as the
+correlation coeffcient used for third order distortion calculations.
+There are two versions of this symbol.  One is used to set the
+defaults at the beginnng of the definition.  The other can be placed
+in series with the cascade to change the defaults part way through.
+This is useful if you wish to change impedance levels in the middle of
+the receiver chain.  Attributes:
+
+@itemize
+@item
+RIN=Default block input resistance in Ohms.  Optional.
+
+@item
+ROUT=Default block output resistance in Ohms.  Optional.
+
+@item
+RHO=Default third order distortion correlation coeffcient.  Optional.
+
+@end itemize
+
+
+@subsubsection Elements
+
+Cascade characterizes each block in a system by its gain and
+optionally noise figure and third order intercept point.  As such,
+there is no distinction between various elements such as amplifiers,
+filters, and mixers.  The Lepton RF Cascade symbol library contains
+different symbols for clarity in the diagram only.  The currently
+available element symbols are:
+
+Attributes:
+
+Table 1: Element Types
+
+@table @code
+@item cascade-amp
+Amplifier
+
+@item cascade-filter
+Filter
+
+@item cascade-mixer
+Mixer
+
+@item cascade-transformer
+Transformer
+
+@end table
+
+@itemize
+
+@item
+Gain is specified by one of the following:
+
+@itemize
+@item
+@code{G}=Power gain in dB.
+
+@item
+@code{GP}=Power gain in dB.
+
+@item
+@code{GV}=Voltage gain in dB.
+
+@end itemize
+
+@item
+@code{NF}=Noise Figure in dB.  Optional.
+
+@item
+@code{IIP3}=Input Third Order Intercept Point in dBm.  Optional.
+
+@item
+@code{RIN}=Block input resistance in Ohms.  Optional.
+
+@item
+@code{ROUT}=Block output resistance in Ohms.  Optional.
+
+@item
+@code{RHO}=Third order distortion correlation coeffcient.  Optional.
+
+@end itemize
+
+
+@subsection Example
+
+This appendix provides a simple example of the entire process of
+generating a schematic, producing a Cascade input file, running an
+analysis and looking at the result.
+
+
+@subsubsection Example Schematics
+
+@ref{fig:cascade1} shows the schematic of a simple receiver signal
+chain.
+
+@float Figure,fig:cascade1
+@image{rf_cascade}
+@caption{Simple receiver signal chain block diagram}
+@end float
+
+@ref{fig:cascade2} shows the contents of the @file{example.cas} file.
+
+@float Figure,fig:cascade2
+@smallformat
+@verbatiminclude example.cas
+@end smallformat
+@caption{Example RF Cascade input file, @file{example.cas}}
+@end float
+
+@subsubsection Netlist the Design
+
+To netlist the design, run:
+@example
+lepton-netlist -g cascade example.cas example.sch
+@end example
+
+
+@subsubsection Run the Analysis
+
+Run the analysis with:
+@example
+cascade example.cas
+@end example
+
+
+@subsection Document Revision History
+@table @code
+@item December 3rd, 2003
+Created cascade.tex
+@end table

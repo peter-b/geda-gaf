@@ -1,0 +1,21 @@
+# Cascade (http://rfcascade.sourceforge.net)
+# Created with Lepton EDA netlister
+
+# Initial global defaults
+defaults RIN=75 ROUT=75 RHO=0 
+
+# Source definition
+source C=-35 CN0=78 CN=0 BW=1
+
+# Cascaded system
+RF_FILTER1 G=-2.5 NF=2.5
+LNA G=12 NF=2.7 IIP3=0
+RF_FILTER2 G=-2.5 NF=2.5
+MIXER G=-7 NF=7 IIP3=-3
+IF_FILTER G=-6 NF=6
+T1 G=0 NF=0 RIN=75 ROUT=50
+defaults  RIN=75 ROUT=50 RHO=0
+IF_AMP G=12 NF=6 IIP3=7
+
+# End of netlist created by Lepton EDA netlister
+

@@ -1,0 +1,190 @@
+@node PADS backend
+@section Forward/backward annotation between Lepton and PADS PowerPCB
+
+by: Dan McMahill
+
+This document is released under
+@url{http://www.gnu.org/copyleft/fdl.html, GFDL}
+
+March 6th, 2003
+
+@node Forward annotation to PADS PowerPCB
+@subsection Forward annotation of lepton schematic changes to PADS PowerPCB layout
+
+@subsubsection Overview
+
+Forward annotation is the process of updating a layout to reflect
+changes made in the schematic.  This process is used when, for
+example, a new component is added to a schematic and needs to be
+included in the layout.  This section describes how to forward
+annotate changes in a Lepton schematic to a PADS PowerPCB layout.
+
+PADS implements forward annotation through the use of an ECO
+(Engineering Change Order) file.  The ECO file describes the
+differences between a current design and the desired design.  PADS
+generates the ECO file by performing a netlist comparison between a
+new netlist file and the netlist contained in the current layout.
+
+@subsubsection Detailed forward annotation procedure
+
+This procedure assumes you have a board layout open in PADS and that
+you have made your schematic changes in @schematic.  For the purposes
+of illustration, assume your schematic is split into two pages in the
+files @file{pg1.sch} and @file{pg2.sch}.
+
+@itemize
+@item
+Create an updated PADS netlist by running:
+
+@code{lepton-netlist -g pads -o mynet.asc pg1.sch pg2.sch}
+
+This will create the netlist file @file{mynet.asc}.
+
+@item
+Make a backup copy of your PADS layout in case things fail in a
+destructive way.
+
+@item
+From within PADS, choose the @clicksequence{Tools @click{} Compare
+Netlist} menu item and choose the following options in the form:
+
+@end itemize
+
+
+@multitable @columnfractions .5 .5
+@item
+original design to compare @tab use current PCB design
+@item
+new design with changes @tab mynet.asc
+@item
+√ @tab generate differences report
+@item
+√ @tab generate eco file
+@item
+@item
+comparison options
+@item
+√ @tab compare only ECO registered parts
+@item
+@item
+attribute comparison level
+@item
+√ @tab ignore all attributes
+
+@end multitable
+
+Click the @samp{OK} button to create the ECO file.
+
+@itemize
+@item
+Examine the ECO file to make sure it looks ok (the ECO file is a text
+file which can be viewed with any text editor).
+
+@item
+From within PADS, choose the @clicksequence{File @click{} Import...}
+menu item.  Locate and choose the ECO file created previously.
+
+@end itemize
+
+@node Back annotation from PADS PowerPCB
+@subsection Back annotation of PADS PowerPCB layout changes to Lepton schematic
+
+Backannotation is the process of updating schematics to reflect
+changes made in the layout.  This process is used, for example, when
+the reference designators have been renumbered on the layout, when
+pins have been swapped (e.g., on an AND gate), or slots have been
+swapped (e.g., on a multi-gate package).  This section describes how
+to backannotate changes in a PADS PowerPCB layout to a Lepton
+schematic.  The PADS PowerPCB tool supports three types of schematic
+backannotation:
+
+@enumerate
+@item
+Reference designator changes.  This is often times used at the end of
+a layout to give components which are geographically close a set of
+reference designators which are numerically close.
+
+@item
+Slot swapping.  This is commonly found in digital designs where there
+may be multiple identical gates in a single package.  For example, you
+may wish to swap which slot is used in a hex inverter.
+
+@item
+Pin swapping.  During layout, the designer may wish to swap equivalent
+pins on a chip.  For example, the two inputs on a NAND gate.
+
+@end enumerate
+
+Currently only reference designator changes are automatically
+processed by the PADS to @schematic{} backannotation tool.  The slot
+and pin swapping changes are provided in a report which the schematic
+designer must use to manually correct the schematic.
+
+
+@subsubsection Detailed backannotation procedure
+
+This procedure assumes you have a board layout open in PADS.  For the
+purposes of illustration, assume your schematic is split into two
+pages in the files @file{pg1.sch} and @file{pg2.sch}.
+
+@itemize
+@item
+Create an up to date PADS netlist by running:
+
+@code{lepton-netlist -g pads -o mynet.asc pg1.sch pg2.sch}
+
+This will create the netlist file @file{mynet.asc}.
+
+@item
+From within PADS, choose the @clicksequence{Tools @click{} Compare
+Netlist} menu item and choose the following options in the form:
+
+@end itemize
+
+@multitable @columnfractions .5 .5
+@item
+original design to compare @tab mynet.asc
+@item
+new design with changes @tab use current PCB design
+@item
+√ @tab generate differences report
+@item
+√ @tab generate eco file
+@item
+@item
+comparison options
+@item
+√ @tab compare only ECO registered parts
+@item
+@item
+attribute comparison level
+@item
+√ @tab ignore all attributes
+
+@end multitable
+
+Click the @samp{OK} button to create the ECO file.
+
+@itemize
+@item
+Examine the ECO file to make sure it looks ok (the ECO file is a text
+file which can be viewed with any text editor).
+
+@item
+Make a backup copy of your Lepton schematic files in case things fail
+in a destructive way.
+
+@item
+Run:
+
+@code{pads_backannotate file.eco pg1.sch pg2.sch | tee backanno.log}
+
+where @file{file.eco} is the name of the ECO file created previously
+and @file{pg1.sch} and @file{pg2.sch} are all of your schematic pages.
+This will apply the reference designator change portion of the ECO
+file and also generate a list of pin and slot swapping which must be
+performed by hand.  The file @file{backanno.log} will contain a log of
+the session that can be refered to when performing the pin and slot
+swapping.
+
+@end itemize

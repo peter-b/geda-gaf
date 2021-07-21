@@ -1,0 +1,407 @@
+@node Switcap backend
+@section gEDA/gaf Switcap Symbols and Netlister
+
+by: Dan McMahill
+
+This document is released under
+@url{http://www.gnu.org/copyleft/fdl.html, GFDL}
+
+April 13th, 2003
+
+The original document can be found at
+@smallformat
+@url{http://web.mit.edu/~geda/arch/i386_rhel3/versions/current/share/doc/geda-doc/switcap/switcap.html}
+@end smallformat
+
+The main SWITCAP page is at
+@url{http://www.cisl.columbia.edu/projects/switcap/}
+
+There you can find the full reference manual of the program.
+
+Some probably useful tips can be found at
+@url{https://web.engr.oregonstate.edu/~moon/kaj/swtips.html#manual}
+
+@subsection Overview
+
+This document describes the symbol library and @netlist{} backend
+which supports driving SWITCAP simulations from the Lepton system.
+SWITCAP is a switched capacitor circuit simulator available from
+Columbia University.  It is used in many classroom and research
+environments.  One drawback to SWITCAP is the lack of a freely
+available schematic capture frontend.  The Lepton SWITCAP symbol
+library and @netlist{} backend tries to fill that gap.
+
+The basic steps involved with using Lepton as the frontend for SWITCAP
+simulations are:
+@enumerate
+@item
+Create schematics of the circuit.
+@item
+Create an analysis file.
+@item
+Extract the netlist.
+@item
+Run the SWITCAP simulation.
+@item
+Run @command{sw2asc} to extract the results.
+@item
+View the results with @command{gwave}.
+@end enumerate
+
+
+@subsection Requirements
+
+You will need the following programs to be installed:
+@enumerate
+@item
+A version of Lepton EDA.
+@item
+SWITCAP.  The executable is usually called @command{sw}.  If you do
+not have SWITCAP available on your system, you will need to contact
+Columbia University to obtain a copy.  The Lepton SWITCAP support was
+tested with SWITCAP Version A.5R Release 21-Sep-87.
+@item
+Although it is optional, you may wish to install a tool which can be
+used for plotting the output data.  SWITCAP produces both ASCII data
+listings as well as ugly ASCII plots (note the release date of the
+version of SWITCAP used).  Suitable tools are:
+
+@enumerate
+@item
+Gwave.  Gwave is an analog waveform viewer.  It is fairly basic, but
+easy to use, includes cursors, and has zoom/pan features.  See
+@url{http://gwave.sourceforge.net/}.
+@item
+Scilab.  Similar to matlab.  Powerful, but no cursors or panning.  See
+@url{https://www.scilab.org}.
+@item
+Octave.  Similar to matlab.  See @url{http://www.octave.org/}.
+@item
+Grace.  See @url{http://plasma-gate.weizmann.ac.il/Grace/}.
+@end enumerate
+@end enumerate
+
+
+@subsection Creating Schematics
+
+@subsubsection Required Symbols
+
+This section assumes you are familiar with using @schematic{} to
+create and edit schematics.  SWITCAP netlisting is only supported for
+the components contained in the SWITCAP symbol library as well as the
+ground symbol found in the @file{power} library which comes with
+Lepton.  All allowed SWITCAP elements except for subcircuits are
+supported.  You @emph{must} include the following elements on your
+schematic:
+
+@enumerate
+@item
+One instance of the switcap-timing symbol.  This symbol will set the
+master clock period for your simulations.
+@item
+One or more instances of the switcap-clock symbol.  This symbol defines
+a clock with a particular phase and period.  The reference designator
+of the clock symbol is used by the switches to set what phase they
+switch on.
+@item
+One or more instances of the switcap-analysis symbol.  This symbol
+defines an analysis by specifying a file to include in the SWITCAP
+netlist.  By including multiple instances of this symbol, multiple
+analysis files may be included.
+@end enumerate
+
+
+@subsubsection Optional Symbols
+
+You can also optionally add the following SWITCAP special symbols to
+your schematic:
+@enumerate
+@item
+Zero or one instance of the switcap-title symbol.  This will add a
+TITLE: line to the SWITCAP netlist and will appear in the output file.
+@item
+Zero or one instance of the switcap-options symbol.  By editing the
+OPTIONS attribute on this symbol you can set the various options which
+can be passed to SWITCAP.
+@end enumerate
+
+
+@subsubsection Net Names
+
+When creating schematics to drive SWITCAP, you should name all nets
+that you wish to plot.  To avoid possible conflicts with unnamed nets,
+you should avoid using purely numerical names for nets because all
+unnamed nets will be assigned (somewhat randomly) numbers without
+checking for possible conflicts with explicitly named nets.  SWITCAP
+limits the length of node names to 7 characters.
+
+
+@subsubsection Switches
+
+When placing switches on your schematic, you will need to define which
+clock they are controlled with.  This is done by setting the clock
+attribute on the switch to the reference designator of the clock which
+should control it.
+
+
+@subsection Extracting the SWITCAP Netlist
+
+To extract the SWITCAP netlist, run:
+
+@example
+lepton-netlist -g switcap -o test.scn file1.sch [file2.sch ...]
+@end example
+
+For the example file contained in this archive, you can run:
+
+@example
+lepton-netlist -g switcap -o example.scn ckt.sch clocks.sch analysis.sch
+@end example
+
+The netlist will be left in @file{example.scn}.
+
+
+@subsection Running SWITCAP
+
+I typically use something like:
+
+@example
+printf "example.scn\nexample.out\n" | sw
+@end example
+
+so I can use command history to rerun SWITCAP without having to
+manually type the file names each time.
+
+Refer to the SWITCAP manual for more details.
+
+
+@subsection Appendix A -- Symbols in the Library
+
+
+@subsubsection Capacitors (switcap-capacitor)
+
+Ideal capacitor.  Attributes:
+@table @code
+@item @emph{C}=capacitance
+Required.  Specifies filename to be included.
+@item @emph{refdes}=reference designator
+Required.  Must start with @code{C} and be unique.
+@end table
+
+
+@subsubsection Switches (switcap-switch)
+
+Ideal switch.  Attributes:
+@table @code
+@item @emph{clock}=Controlling clock
+Required.  Specifies which clock controls this switch.
+@item @emph{refdes}=reference designator
+Required.  Must start with @code{S} and be unique.
+@end table
+
+
+@subsubsection Independent Voltage Sources (switcap-vsrc)
+
+Attributes:
+@table @code
+@item @emph{refdes}=reference designator
+Required.  Must start with @code{V} and be unique.
+@end table
+
+
+@subsubsection Dependent Voltage Sources (switcap-vcvs)
+
+Attributes:
+@table @code
+@item @emph{gain}=gain
+Required.  Specifies the gain of the controlled source.
+@item @emph{refdes}=reference designator
+Required.  Must start with @code{E} and be unique.
+@end table
+
+
+@subsubsection Clock Specification (switcap-clock)
+
+Attributes:
+@table @code
+@item @emph{PSTART}=starting clock phase
+Required.  Specifies on what phase of the master clock this clock turns
+on.
+@item @emph{PSTOP}=ending clock phase
+Required.  Specifies on what phase of the master clock this clock turns
+off.
+@item @emph{PERIOD}=clock period
+Required.  Specifies the period of the clock in terms of master clock
+cycles.
+@item @emph{refdes}=reference designator
+Required.  The switches that are controlled by this clock will refer to
+it by the reference designator.  As such, avoid running any reference
+designator renumbering tools.
+@end table
+
+
+@subsubsection Master Timing Specification (switcap-timing)
+
+Attributes:
+@table @code
+@item @emph{PERIOD}=clock period
+Required.  Specifies the period of the master clock in seconds.
+@end table
+
+Only a single instance of this symbol is allowed.
+
+
+@subsubsection Analysis File Include (switcap-analysis)
+
+This symbol will cause a specified file containing SWITCAP analysis
+commands to be included in the output netlist.  Attributes:
+@table @code
+@item @emph{file}=filename
+Required.  Specifies filename to be included.
+@end table
+
+
+@subsubsection Simulation Title Specification (switcap-title)
+
+Attributes:
+@table @code
+@item @emph{TITLE}=switcap title
+Required.  Specifies the TITLE line for the SWITCAP netlist.
+@end table
+
+Only a single instance of this symbol is allowed.
+
+
+@subsubsection Simulation Options Specification (switcap-options)
+
+Attributes:
+@table @code
+@item @emph{OPTIONS}=switcap options
+Required.  Specifies the OPTIONS line for the SWITCAP netlist.  See the
+SWITCAP manual for allowed values.
+@end table
+
+Only a single instance of this symbol is allowed.
+
+
+@subsection Example
+
+This appendix provides a simple example of the entire process of
+generating a schematic, producing a SWITCAP netlist, running a
+simulation, and plotting the results.
+
+@float Figure,fig:switcap1
+@image{ckt}
+@caption{Simple switched capacitor circuit}
+@end float
+
+@float Figure,fig:switcap2
+@image{clocks}
+@caption{SWITCAP clock definition schematic}
+@end float
+
+@float Figure,fig:switcap3
+@image{analysis}
+@caption{SWITCAP analysis definition schematic}
+@end float
+
+@float Figure,fig:switcap4
+@smallformat
+@verbatiminclude test.ana
+@end smallformat
+@caption{SWITCAP analysis file, @file{test.ana}}
+@end float
+
+
+@subsubsection Example Schematics
+
+@ref{fig:switcap1} shows the schematic of a simple switched capacitor
+circuit.  Note that some switches, @attr{S1} and @attr{S3} for
+example, are controlled by @attr{CLK1} while others, @attr{S2} and
+@attr{S4} for example, are controlled by the complement of @attr{CLK1}
+(@attr{#CLK1}).
+
+@ref{fig:switcap2} shows the definition of a clock and the master clock.
+Here we define a master clock period (@emph{mcp}) of 1.0 μs in the
+timing block.  In the clock definition symbol, we define a clock
+called @attr{CLK1} that has a period equal to 1 master clock period
+(@emph{mcp}).  The phase of @attr{CLK1} turning on switches is 0 and
+the phase of @attr{CLK1} turning off switches is 3/8 mcp.  Additional
+clock phases can be defined by creating more instances of the clock
+definition symbol.
+
+@ref{fig:switcap3} shows an instantiation of the title block symbol which
+will cause ``my title'' to be used in the @code{TITLE} line in the
+SWITCAP netlist.  @ref{fig:switcap3} also shows an instantiation of an
+analysis block which directs the netlister to include the contents of
+the file @file{test.ana} in the output netlist.
+
+@ref{fig:switcap4} shows the contents of the @file{test.ana} file.
+
+
+@subsubsection Netlist the Design
+
+To netlist the design, run:
+
+@example
+lepton-netlist -g switcap -o example.scn ckt.sch clocks.sch analysis.sch
+@end example
+
+
+@subsubsection Run the Simulation
+
+Run the simulation with:
+
+@example
+printf "example.scn\nexample.out\n" | sw
+@end example
+
+
+@subsubsection Process the Results
+
+Convert the SWITCAP output file to something @command{gwave} can read
+by running:
+
+@example
+sw2asc example.out
+@end example
+
+
+@subsubsection Plot the Results
+
+Start up the @command{gwave} program and load the first sinusoidal
+steady state result by running:
+
+@example
+gwave example.out.SSS.1.asc
+@end example
+
+Drag the two waveforms onto the two waveform panels and change the
+x-axis to a log scale.  @ref{fig:switcap5} shows the output.  Start up
+the @command{gwave} program and load the transient result by running:
+
+
+@float Figure,fig:switcap5
+FIXME: If you have access to the SWITCAP program, please consider
+sending us the picture with simulation results for documentation.
+@caption{Simulation Results - Sinusoidal steady state}
+@end float
+
+@example
+gwave example.out.TRAN.1.asc
+@end example
+
+Drag the output waveform onto the waveform panel.  @ref{fig:switcap6}
+shows the output.
+
+@float Figure,fig:switcap6
+FIXME: If you have access to the SWITCAP program, please consider
+sending us the picture with simulation results for documentation.
+@caption{Simulation Results - Transient}
+@end float
+
+@subsection Document Revision History
+@table @emph
+@item April 13th, 2003
+Created switcap.tex
+@end table

@@ -65,3 +65,4 @@ T 500 3050 5 10 1 0 0 0 1
 net=GND:7
 T 500 2650 5 10 1 0 0 0 1
 documentation=http://www-s.ti.com/sc/ds/sn74hc00.pdf
+B -200 -100 6000 3400 0 10 1 0 -1 -1 0 -1 -1 -1 -1 -1
